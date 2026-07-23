@@ -206,4 +206,37 @@ async function updateStatus(id, status) {
 
 }
 
+
+if (page === 'admin-applications') {
+
+    const body = document.getElementById('applications-body');
+
+    const response = await fetch('/api/admin/applications');
+
+    if (!response.ok) {
+        body.innerHTML =
+            '<tr><td colspan="6">Unable to load applications.</td></tr>';
+        return;
+    }
+
+    const { applications } = await response.json();
+
+    body.innerHTML = applications.map(app => `
+        <tr>
+            <td>${app.name}</td>
+            <td>${app.role_interest || '-'}</td>
+            <td>${app.status}</td>
+            <td>
+                ${app.cv_storage_path
+                    ? `<a href="${app.cv_storage_path}" target="_blank">Download</a>`
+                    : '-'}
+            </td>
+            <td>
+                <button onclick="acceptApplication('${app.id}')">Accept</button>
+                <button onclick="rejectApplication('${app.id}')">Reject</button>
+            </td>
+        </tr>
+    `).join('');
+
+}
 initializePage();
