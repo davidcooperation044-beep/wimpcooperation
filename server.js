@@ -483,15 +483,30 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
             })
             .eq('id', id);
 
-        // Send welcome email
-        await sendWelcomeEmail(
-            application.email,
-            password,
-            application.role_interest
-        );
+        // Send welcome email — isolate this so a mail failure doesn't
+        // masquerade as a failure to accept the application (the hire
+        // above has already succeeded at this point).
+        let emailSent = true;
+        try {
+
+            await sendWelcomeEmail(
+                application.email,
+                password,
+                application.role_interest
+            );
+
+        } catch (emailErr) {
+
+            emailSent = false;
+            console.error('Application accepted but welcome email failed:', emailErr);
+
+        }
 
         res.json({
-            message: 'Application accepted successfully.'
+            message: emailSent
+                ? 'Application accepted successfully.'
+                : 'Application accepted, but the welcome email failed to send. Check server logs.',
+            emailSent
         });
 
     } catch (err) {
@@ -538,12 +553,25 @@ app.patch('/api/admin/applications/:id/reject', requireAuth('admin'), async (req
             })
             .eq('id', id);
 
-        await sendRejectionEmail(
-            application.email
-        );
+        let emailSent = true;
+        try {
+
+            await sendRejectionEmail(
+                application.email
+            );
+
+        } catch (emailErr) {
+
+            emailSent = false;
+            console.error('Application rejected but rejection email failed:', emailErr);
+
+        }
 
         res.json({
-            message: 'Application rejected successfully.'
+            message: emailSent
+                ? 'Application rejected successfully.'
+                : 'Application rejected, but the notification email failed to send. Check server logs.',
+            emailSent
         });
 
     } catch (err) {
