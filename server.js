@@ -4,6 +4,10 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const { sendWelcomeEmail } = require('./utils/email');
 
 const app = express();
 
@@ -430,6 +434,11 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
                 role: role,
                 status: 'active'
             });
+        await sendWelcomeEmail(
+    application.email,
+    password,
+    application.role_interest
+);
 
     }
 
@@ -438,6 +447,7 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
     });
 
 });
+
 app.patch('/api/admin/applications/:id/reject', requireAuth('admin'), async (req, res) => {
 
     const { id } = req.params;
