@@ -220,3 +220,30 @@ app.get('/api/admin/staff', requireAuth('admin'), async (req, res) => {
   });
 });
 
+app.patch('/api/admin/staff/:id', requireAuth('admin'), async (req, res) => {
+  const { id } = req.params;
+  const { role, status } = req.body;
+
+  const updates = {};
+
+  if (role) updates.role = role;
+  if (status) updates.status = status;
+
+  const { data, error } = await supabaseAdmin
+    .from('portal_users')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'Unable to update staff member.'
+    });
+  }
+
+  res.json({
+    staff: data
+  });
+});
