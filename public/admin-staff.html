@@ -45,7 +45,18 @@
                 <td>John Smith</td>
                 <td>worker</td>
                 <td>active</td>
-                <td><a class="secondary" href="#">Edit</a></td>
+                <td>
+    <select onchange="updateRole('${user.id}', this.value)">
+        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+        <option value="worker" ${user.role === 'worker' ? 'selected' : ''}>Worker</option>
+        <option value="affiliate" ${user.role === 'affiliate' ? 'selected' : ''}>Affiliate</option>
+    </select>
+
+    <select onchange="updateStatus('${user.id}', this.value)">
+        <option value="active" ${user.status === 'active' ? 'selected' : ''}>Active</option>
+        <option value="deactivated" ${user.status === 'deactivated' ? 'selected' : ''}>Deactivated</option>
+    </select>
+</td>
               </tr>
             </tbody>
           </table>
