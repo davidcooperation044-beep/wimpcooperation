@@ -596,7 +596,7 @@ async function initializePage() {
     // Header
     if (userBadge) {
         userBadge.textContent =
-            `${auth.user.name} • ${auth.user.role}`;
+    `${auth.user.email} • ${auth.user.role}`;
     }
 
     if (logoutButton) {
@@ -720,6 +720,45 @@ async function rejectApplication(id) {
         await loadApplications();
 
         alert('Application rejected.');
+
+    } catch (err) {
+
+        alert(err.message);
+
+    }
+
+}
+async function completeTask(id) {
+
+    try {
+
+        await api(`/api/admin/tasks/${id}/complete`, {
+            method: 'PATCH'
+        });
+
+        await loadTasks();
+
+        alert('Task completed.');
+
+    } catch (err) {
+
+        alert(err.message);
+
+    }
+
+}
+
+async function markCommissionPaid(id) {
+
+    try {
+
+        await api(`/api/admin/commissions/${id}/paid`, {
+            method: 'PATCH'
+        });
+
+        await loadCommissions();
+
+        alert('Commission marked as paid.');
 
     } catch (err) {
 
