@@ -232,47 +232,60 @@ async function loadApplications() {
 
         if (applications.length === 0) {
 
-           body.innerHTML += `
-<tr>
+            body.innerHTML = `
+                <tr>
+                    <td colspan="7">No applications found.</td>
+                </tr>
+            `;
 
-    <td>${app.name}</td>
-
-    <td>${app.email}</td>
-
-    <td>${app.role_interest || '-'}</td>
-
-    <td>
-        ${
-            app.portfolio_url
-            ? `<a href="${app.portfolio_url}" target="_blank">View Portfolio</a>`
-            : '-'
+            return;
         }
-    </td>
 
-    <td>${app.status}</td>
+        applications.forEach(app => {
 
-    <td>
-        ${
-            app.cv_storage_path
-            ? `<a href="${app.cv_storage_path}" target="_blank">Download CV</a>`
-            : '-'
-        }
-    </td>
+            body.innerHTML += `
+                <tr>
 
-    <td>
-        <button onclick="acceptApplication('${app.id}')">
-            Accept
-        </button>
+                    <td>${app.name}</td>
 
-        <button onclick="rejectApplication('${app.id}')">
-            Reject
-        </button>
-    </td>
+                    <td>${app.email}</td>
 
-</tr>
-`;
+                    <td>${app.role_interest || '-'}</td>
 
-});
+                    <td>
+                        ${
+                            app.portfolio_url
+                                ? `<a href="${app.portfolio_url}" target="_blank">View Portfolio</a>`
+                                : '-'
+                        }
+                    </td>
+
+                    <td>${app.status}</td>
+
+                    <td>
+                        ${
+                            app.cv_storage_path
+                                ? `<a href="${app.cv_storage_path}" target="_blank">Download CV</a>`
+                                : '-'
+                        }
+                    </td>
+
+                    <td>
+
+                        <button onclick="acceptApplication('${app.id}')">
+                            Accept
+                        </button>
+
+                        <button onclick="rejectApplication('${app.id}')">
+                            Reject
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+
+        });
 
     } catch (err) {
 
@@ -280,7 +293,7 @@ async function loadApplications() {
 
         body.innerHTML = `
             <tr>
-                <td colspan="6">
+                <td colspan="7">
                     Failed to load applications.
                 </td>
             </tr>
