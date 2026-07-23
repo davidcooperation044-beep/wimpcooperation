@@ -410,3 +410,42 @@ async function updateStatus(id, status) {
         alert(err.message);
     }
 }
+async function acceptApplication(id) {
+
+    try {
+
+        await api(`/api/admin/applications/${id}/accept`, {
+            method: 'PATCH'
+        });
+
+        await loadApplications();
+
+        alert('Application accepted.');
+
+    } catch (err) {
+
+        alert(err.message);
+
+    }
+
+}
+
+async function rejectApplication(id) {
+
+    try {
+
+        await api(`/api/admin/applications/${id}/reject`, {
+            method: 'PATCH'
+        });
+
+        await loadApplications();
+
+        alert('Application rejected.');
+
+    } catch (err) {
+
+        alert(err.message);
+
+    }
+
+}
