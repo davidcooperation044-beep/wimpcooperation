@@ -154,6 +154,9 @@ async function initializePage() {
   }
 }
 
+
+
+// <-- ADD THIS HERE
 if (page === 'admin-staff') {
 
     const body = document.getElementById('staff-body');
@@ -161,8 +164,7 @@ if (page === 'admin-staff') {
     const response = await fetch('/api/admin/staff');
 
     if (!response.ok) {
-        body.innerHTML =
-            '<tr><td colspan="4">Unable to load staff.</td></tr>';
+        body.innerHTML = '<tr><td colspan="4">Unable to load staff.</td></tr>';
         return;
     }
 
@@ -174,38 +176,11 @@ if (page === 'admin-staff') {
             <td>${user.role}</td>
             <td>${user.status}</td>
             <td>
-                <button onclick="editStaff('${user.id}')">
-                    Edit
-                </button>
+                <button onclick="editStaff('${user.id}')">Edit</button>
             </td>
         </tr>
     `).join('');
 }
-
-async function updateRole(id, role) {
-
-    await fetch(`/api/admin/staff/${id}`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ role })
-    });
-
-}
-
-async function updateStatus(id, status) {
-
-    await fetch(`/api/admin/staff/${id}`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
-    });
-
-}
-
 
 if (page === 'admin-applications') {
 
@@ -214,8 +189,7 @@ if (page === 'admin-applications') {
     const response = await fetch('/api/admin/applications');
 
     if (!response.ok) {
-        body.innerHTML =
-            '<tr><td colspan="6">Unable to load applications.</td></tr>';
+        body.innerHTML = '<tr><td colspan="6">Unable to load applications.</td></tr>';
         return;
     }
 
@@ -226,17 +200,26 @@ if (page === 'admin-applications') {
             <td>${app.name}</td>
             <td>${app.role_interest || '-'}</td>
             <td>${app.status}</td>
-            <td>
-                ${app.cv_storage_path
-                    ? `<a href="${app.cv_storage_path}" target="_blank">Download</a>`
-                    : '-'}
-            </td>
+            <td>${app.cv_storage_path
+                ? `<a href="${app.cv_storage_path}" target="_blank">Download</a>`
+                : '-'}</td>
             <td>
                 <button onclick="acceptApplication('${app.id}')">Accept</button>
                 <button onclick="rejectApplication('${app.id}')">Reject</button>
             </td>
         </tr>
     `).join('');
-
 }
+
+} // <-- end initializePage()
+
+async function updateRole(...) {
+    ...
+}
+
+async function updateStatus(...) {
+    ...
+}
+
+
 initializePage();
