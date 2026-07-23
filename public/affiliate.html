@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Affiliate Dashboard - Wimpy Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="affiliate">
+  <div class="page-shell">
+    <header class="header-shell">
+      <div class="header-inner">
+        <div>
+          <strong>Wimpy Portal</strong>
+          <span>Affiliate dashboard</span>
+        </div>
+        <div class="site-nav">
+          <span id="user-badge" class="badge"></span>
+          <a href="/">Home</a>
+          <button id="logout-button" class="secondary">Logout</button>
+        </div>
+      </div>
+    </header>
+    <main class="main-content">
+      <section class="section-title">
+        <div>
+          <h2>Affiliate dashboard</h2>
+          <p>Your referral metrics, commission status, and assets.</p>
+        </div>
+      </section>
+      <div class="top-card-grid">
+        <div class="dashboard-card">
+          <h3>Pending commissions</h3>
+          <p id="pending-total" class="large-number">$0.00</p>
+        </div>
+        <div class="dashboard-card">
+          <h3>Paid commissions</h3>
+          <p id="paid-total" class="large-number">$0.00</p>
+        </div>
+      </div>
+      <div class="dashboard-card">
+        <h3>Referral code</h3>
+        <p id="referral-code">No referral code assigned</p>
+      </div>
+      <div class="table-shell" style="margin-top: 1rem;">
+        <table>
+          <thead>
+            <tr><th>Code</th><th>Clicks</th><th>Conversions</th></tr>
+          </thead>
+          <tbody id="referrals-body"></tbody>
+        </table>
+      </div>
+      <div class="table-shell" style="margin-top: 1rem;">
+        <table>
+          <thead>
+            <tr><th>Amount</th><th>Status</th><th>Payout date</th></tr>
+          </thead>
+          <tbody id="commissions-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Wimpy Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="admin">
+  <div class="page-shell">
+    <header class="header-shell">
+      <div class="header-inner">
+        <div>
+          <strong>Wimpy Portal</strong>
+          <span>Admin dashboard</span>
+        </div>
+        <div class="site-nav">
+          <span id="user-badge" class="badge"></span>
+          <a href="/">Home</a>
+          <button id="logout-button" class="secondary">Logout</button>
+        </div>
+      </div>
+    </header>
+    <main class="main-content">
+      <section class="section-title">
+        <div>
+          <h2>Admin overview</h2>
+          <p>Quick status for applications, staff, and affiliates.</p>
+        </div>
+      </section>
+      <div id="admin-stats"></div>
+      <div class="button-grid">
+        <a class="secondary" href="/admin-applications.html">Review applications</a>
+        <a class="secondary" href="/admin-staff.html">Staff directory</a>
+        <a class="secondary" href="/admin-tasks.html">Worker tasks</a>
+        <a class="secondary" href="/admin-commissions.html">Commissions</a>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
