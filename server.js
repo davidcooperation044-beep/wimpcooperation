@@ -446,14 +446,23 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
                 ? 'affiliate'
                 : 'worker';
 
-        await supabaseAdmin
-            .from('portal_users')
-            .upsert({
-                id: application.user_id,
-                email: application.email,
-                role: role,
-                status: 'active'
-            });
+       let portalRole;
+
+if (application.type === 'job_application') {
+    portalRole = 'worker';
+} else {
+    portalRole = 'affiliate';
+}
+
+await supabaseAdmin
+    .from('portal_users')
+    .insert({
+        id: authUser.user.id,
+        email: application.email,
+        role: portalRole,
+        job_title: application.role_interest,
+        status: 'active'
+    });
         await sendWelcomeEmail(
     application.email,
     password,
