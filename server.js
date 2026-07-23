@@ -12,13 +12,6 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-// TEMPORARY DEBUG — remove once the email issue is confirmed fixed.
-// JSON.stringify exposes any hidden whitespace/newlines that wouldn't
-// otherwise be visible when just logging the raw string.
-console.log('DEBUG FROM_EMAIL:', JSON.stringify(process.env.FROM_EMAIL));
-console.log('DEBUG RESEND_API_KEY prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.slice(0, 8) + '...' : 'MISSING');
-console.log('DEBUG APP_URL:', JSON.stringify(process.env.APP_URL));
-
 // ================================
 // Supabase
 // ================================
@@ -478,16 +471,11 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
 
         }
 
-        // Update application
+        // Remove the application record now that the applicant has
+        // been hired — the portal_users row is the new source of truth.
         await supabaseAdmin
             .from('applications')
-            .update({
-
-                status: 'accepted',
-
-                reviewed_by: req.session.user.id
-
-            })
+            .delete()
             .eq('id', id);
 
         // Send welcome email — isolate this so a mail failure doesn't
@@ -549,15 +537,10 @@ app.patch('/api/admin/applications/:id/reject', requireAuth('admin'), async (req
 
         }
 
+        // Remove the application record now that it's been declined.
         await supabaseAdmin
             .from('applications')
-            .update({
-
-                status: 'rejected',
-
-                reviewed_by: req.session.user.id
-
-            })
+            .delete()
             .eq('id', id);
 
         let emailSent = true;
