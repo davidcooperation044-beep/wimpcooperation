@@ -26,9 +26,9 @@ async function sendWelcomeEmail(email, password, role) {
             <p>
                 Login here:
                 <br>
-                <a href="http://localhost:3000/login.html">
-                    Wimpy Portal
-                </a>
+                <a href="${process.env.APP_URL}/login.html">
+               Wimpy Portal
+            </a>
             </p>
 
             <p>Please change your password after your first login.</p>
