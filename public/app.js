@@ -218,6 +218,82 @@ async function loadStaff() {
     }
 
 }
+async function loadApplications() {
+
+    const body = document.getElementById('applications-body');
+
+    if (!body) return;
+
+    try {
+
+        const { applications } = await api('/api/admin/applications');
+
+        body.innerHTML = '';
+
+        if (applications.length === 0) {
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="6">No applications found.</td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        applications.forEach(app => {
+
+            body.innerHTML += `
+                <tr>
+
+                    <td>${app.name}</td>
+
+                    <td>${app.email}</td>
+
+                    <td>${app.role_interest || app.type}</td>
+
+                    <td>${app.status}</td>
+
+                    <td>
+                        ${
+                            app.cv_storage_path
+                            ? `<a href="${app.cv_storage_path}" target="_blank">View CV</a>`
+                            : '-'
+                        }
+                    </td>
+
+                    <td>
+
+                        <button onclick="acceptApplication('${app.id}')">
+                            Accept
+                        </button>
+
+                        <button onclick="rejectApplication('${app.id}')">
+                            Reject
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    Failed to load applications.
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
 async function initializePage() {
 
     const page = document.body.dataset.page;
