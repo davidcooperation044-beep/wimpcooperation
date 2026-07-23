@@ -74,3 +74,8 @@ async function sendRejectionEmail(email) {
     });
 
 }
+
+module.exports = {
+    sendWelcomeEmail,
+    sendRejectionEmail
+};
