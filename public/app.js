@@ -294,6 +294,267 @@ async function loadApplications() {
     }
 
 }
+async function loadWorkerTasks() {
+
+    const body = document.querySelector('#worker-tasks tbody');
+
+    if (!body) return;
+
+    try {
+
+        const { tasks } = await api('/api/worker/tasks');
+
+        body.innerHTML = '';
+
+        if (tasks.length === 0) {
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="4">No tasks assigned.</td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        tasks.forEach(task => {
+
+            body.innerHTML += `
+                <tr>
+
+                    <td>${task.title}</td>
+
+                    <td>${task.status}</td>
+
+                    <td>${task.due_date || '-'}</td>
+
+                    <td>${task.project_ref || '-'}</td>
+
+                </tr>
+            `;
+
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="4">
+                    Failed to load tasks.
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
+async function loadAffiliateDashboard() {
+
+    const referralsBody = document.getElementById('referrals-body');
+    const commissionsBody = document.getElementById('commissions-body');
+    const pendingTotal = document.getElementById('pending-total');
+    const paidTotal = document.getElementById('paid-total');
+    const referralCode = document.getElementById('referral-code');
+
+    if (!referralsBody || !commissionsBody) return;
+
+    try {
+
+        const { referrals, commissions } =
+            await api('/api/affiliate/data');
+
+        const pending = commissions
+            .filter(c => c.status === 'pending')
+            .reduce((sum, c) => sum + Number(c.amount), 0);
+
+        const paid = commissions
+            .filter(c => c.status === 'paid')
+            .reduce((sum, c) => sum + Number(c.amount), 0);
+
+        pendingTotal.textContent = `$${pending.toFixed(2)}`;
+        paidTotal.textContent = `$${paid.toFixed(2)}`;
+
+        referralCode.textContent =
+            referrals.length
+                ? referrals[0].code
+                : 'No referral code';
+
+        referralsBody.innerHTML = '';
+
+        referrals.forEach(ref => {
+
+            referralsBody.innerHTML += `
+                <tr>
+                    <td>${ref.code}</td>
+                    <td>${ref.clicks}</td>
+                    <td>${ref.conversions}</td>
+                </tr>
+            `;
+
+        });
+
+        commissionsBody.innerHTML = '';
+
+        commissions.forEach(com => {
+
+            commissionsBody.innerHTML += `
+                <tr>
+                    <td>$${Number(com.amount).toFixed(2)}</td>
+                    <td>${com.status}</td>
+                    <td>${com.payout_date || '-'}</td>
+                </tr>
+            `;
+
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+}
+
+async function loadTasks() {
+
+    const body = document.getElementById('tasks-body');
+
+    if (!body) return;
+
+    try {
+
+        const { tasks } = await api('/api/admin/tasks');
+
+        body.innerHTML = '';
+
+        if (tasks.length === 0) {
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="6">No tasks found.</td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        tasks.forEach(task => {
+
+            body.innerHTML += `
+                <tr>
+
+                    <td>${task.title}</td>
+
+                    <td>${task.assigned_to || '-'}</td>
+
+                    <td>${task.status}</td>
+
+                    <td>${task.due_date || '-'}</td>
+
+                    <td>${task.project_ref || '-'}</td>
+
+                    <td>
+                        <button onclick="completeTask('${task.id}')">
+                            Complete
+                        </button>
+                    </td>
+
+                </tr>
+            `;
+
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    Failed to load tasks.
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
+async function loadCommissions() {
+
+    const body = document.getElementById('commissions-body');
+
+    if (!body) return;
+
+    try {
+
+        const { commissions } = await api('/api/admin/commissions');
+
+        body.innerHTML = '';
+
+        if (commissions.length === 0) {
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        No commissions found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+
+        }
+
+        commissions.forEach(com => {
+
+            body.innerHTML += `
+                <tr>
+
+                    <td>${com.affiliate_id}</td>
+
+                    <td>$${Number(com.amount).toFixed(2)}</td>
+
+                    <td>${com.status}</td>
+
+                    <td>${com.created_at
+                        ? new Date(com.created_at).toLocaleDateString()
+                        : '-'}</td>
+
+                    <td>${com.payout_date || '-'}</td>
+
+                    <td>
+
+                        <button onclick="markCommissionPaid('${com.id}')">
+
+                            Mark Paid
+
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    Failed to load commissions.
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
+
 async function initializePage() {
 
     const page = document.body.dataset.page;
@@ -359,19 +620,23 @@ async function initializePage() {
         break;
 
     case 'admin-applications':
+        await loadApplications();
         break;
-
     case 'admin-tasks':
-        break;
+    await loadTasks();
+    break;
 
     case 'admin-commissions':
-        break;
+    await loadCommissions();
+    break;
 
     case 'worker':
-        break;
+    await loadWorkerTasks();
+    break;
 
-    case 'affiliate':
-        break;
+   case 'affiliate':
+    await loadAffiliateDashboard();
+    break;
 
 }
 
@@ -409,6 +674,25 @@ async function updateStatus(id, status) {
     } catch (err) {
         alert(err.message);
     }
+}
+async function markCommissionPaid(id) {
+
+    try {
+
+        await api(`/api/admin/commissions/${id}/paid`, {
+            method: 'PATCH'
+        });
+
+        await loadCommissions();
+
+        alert('Commission marked as paid.');
+
+    } catch (err) {
+
+        alert(err.message);
+
+    }
+
 }
 async function acceptApplication(id) {
 
