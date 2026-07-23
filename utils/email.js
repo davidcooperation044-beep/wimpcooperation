@@ -41,3 +41,36 @@ async function sendWelcomeEmail(email, password, role) {
 module.exports = {
     sendWelcomeEmail
 };
+
+
+
+async function sendRejectionEmail(email) {
+
+    await resend.emails.send({
+
+        from: process.env.FROM_EMAIL,
+
+        to: email,
+
+        subject: 'Your Wimpy Application',
+
+        html: `
+            <h2>Thank you for your application</h2>
+
+            <p>
+                We appreciate your interest in joining Wimpy.
+            </p>
+
+            <p>
+                After reviewing your application, we have decided
+                not to proceed at this time.
+            </p>
+
+            <p>
+                We encourage you to apply again in the future.
+            </p>
+        `
+
+    });
+
+}
