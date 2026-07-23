@@ -201,3 +201,22 @@ app.get('/api/admin/applications', requireAuth('admin'), async (req, res) => {
 
   res.json({ applications: data });
 });
+
+app.get('/api/admin/staff', requireAuth('admin'), async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('portal_users')
+    .select('id,email,role,status,created_at')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'Unable to load staff.'
+    });
+  }
+
+  res.json({
+    staff: data
+  });
+});
+
