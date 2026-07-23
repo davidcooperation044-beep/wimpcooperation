@@ -154,4 +154,32 @@ async function initializePage() {
   }
 }
 
+if (page === 'admin-staff') {
+
+    const body = document.getElementById('staff-body');
+
+    const response = await fetch('/api/admin/staff');
+
+    if (!response.ok) {
+        body.innerHTML =
+            '<tr><td colspan="4">Unable to load staff.</td></tr>';
+        return;
+    }
+
+    const { staff } = await response.json();
+
+    body.innerHTML = staff.map(user => `
+        <tr>
+            <td>${user.email}</td>
+            <td>${user.role}</td>
+            <td>${user.status}</td>
+            <td>
+                <button onclick="editStaff('${user.id}')">
+                    Edit
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
 initializePage();
