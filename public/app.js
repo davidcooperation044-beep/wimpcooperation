@@ -272,7 +272,7 @@ async function loadApplications() {
 </tr>
 `;
 
-        });
+});
 
     } catch (err) {
 
