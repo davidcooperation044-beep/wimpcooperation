@@ -619,6 +619,8 @@ app.patch('/api/admin/applications/:id/reject', requireAuth('admin'), async (req
             message: 'Application rejected successfully.'
         });
 
+        await sendRejectionEmail(application.email);
+
     } catch (err) {
 
         console.error(err);
@@ -626,6 +628,8 @@ app.patch('/api/admin/applications/:id/reject', requireAuth('admin'), async (req
         res.status(500).json({
             message: 'Unable to reject application.'
         });
+
+        
 
     }
 
