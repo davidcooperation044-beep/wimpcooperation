@@ -448,6 +448,118 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
 
 });
 
+app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+
+        // Get application
+        const { data: application, error: appError } = await supabaseAdmin
+            .from('applications')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (appError || !application) {
+            return res.status(404).json({
+                message: 'Application not found.'
+            });
+        }
+
+        // Generate a temporary password
+        const password = crypto
+            .randomBytes(12)
+            .toString('base64')
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .slice(0, 12);
+
+        // Determine the role
+        const role =
+            application.role_interest ||
+            (application.type === 'job_application'
+                ? 'worker'
+                : 'affiliate');
+
+        // Create Supabase Auth user
+        const { data: authData, error: authError } =
+            await supabaseAdmin.auth.admin.createUser({
+
+                email: application.email,
+
+                password,
+
+                email_confirm: true
+
+            });
+
+        if (authError) {
+            return res.status(500).json({
+                message: authError.message
+            });
+        }
+
+        // Create portal user
+        const { error: portalError } = await supabaseAdmin
+            .from('portal_users')
+            .insert({
+
+                id: authData.user.id,
+
+                email: application.email,
+
+                role,
+
+                status: 'active'
+
+            });
+
+        if (portalError) {
+
+            // Roll back the auth user if portal insert fails
+            await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+
+            return res.status(500).json({
+                message: portalError.message
+            });
+
+        }
+
+        // Update application
+        await supabaseAdmin
+            .from('applications')
+            .update({
+
+                status: 'accepted',
+
+                reviewed_by: req.session.user.id
+
+            })
+            .eq('id', id);
+
+        // Send email
+        await sendWelcomeEmail(
+            application.email,
+            password,
+            role
+        );
+
+        res.json({
+            message: 'Application accepted successfully.'
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            message: 'Unable to accept application.'
+        });
+
+    }
+
+});
+
 app.patch('/api/admin/applications/:id/reject', requireAuth('admin'), async (req, res) => {
 
     const { id } = req.params;
@@ -471,6 +583,47 @@ app.patch('/api/admin/applications/:id/reject', requireAuth('admin'), async (req
     res.json({
         application: data
     });
+
+});
+
+app.patch('/api/admin/applications/:id/reject', requireAuth('admin'), async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+
+        const { error } = await supabaseAdmin
+            .from('applications')
+            .update({
+
+                status: 'rejected',
+
+                reviewed_by: req.session.user.id
+
+            })
+            .eq('id', id);
+
+        if (error) {
+
+            return res.status(500).json({
+                message: error.message
+            });
+
+        }
+
+        res.json({
+            message: 'Application rejected successfully.'
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            message: 'Unable to reject application.'
+        });
+
+    }
 
 });
 
@@ -579,3 +732,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
+
+
