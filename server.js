@@ -12,6 +12,13 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
+// TEMPORARY DEBUG — remove once the email issue is confirmed fixed.
+// JSON.stringify exposes any hidden whitespace/newlines that wouldn't
+// otherwise be visible when just logging the raw string.
+console.log('DEBUG FROM_EMAIL:', JSON.stringify(process.env.FROM_EMAIL));
+console.log('DEBUG RESEND_API_KEY prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.slice(0, 8) + '...' : 'MISSING');
+console.log('DEBUG APP_URL:', JSON.stringify(process.env.APP_URL));
+
 // ================================
 // Supabase
 // ================================
