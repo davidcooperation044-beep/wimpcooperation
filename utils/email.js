@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendWelcomeEmail(email, password, role) {
 
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
 
         from: process.env.FROM_EMAIL,
 
@@ -36,17 +36,17 @@ async function sendWelcomeEmail(email, password, role) {
 
     });
 
+    if (error) {
+        throw new Error(`Resend rejected welcome email: ${error.message || JSON.stringify(error)}`);
+    }
+
+    return data;
+
 }
-
-module.exports = {
-    sendWelcomeEmail
-};
-
-
 
 async function sendRejectionEmail(email) {
 
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
 
         from: process.env.FROM_EMAIL,
 
@@ -72,6 +72,12 @@ async function sendRejectionEmail(email) {
         `
 
     });
+
+    if (error) {
+        throw new Error(`Resend rejected rejection email: ${error.message || JSON.stringify(error)}`);
+    }
+
+    return data;
 
 }
 
