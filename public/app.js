@@ -182,4 +182,28 @@ if (page === 'admin-staff') {
     `).join('');
 }
 
+async function updateRole(id, role) {
+
+    await fetch(`/api/admin/staff/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ role })
+    });
+
+}
+
+async function updateStatus(id, status) {
+
+    await fetch(`/api/admin/staff/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+    });
+
+}
+
 initializePage();
