@@ -188,3 +188,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
+
+app.get('/api/admin/applications', requireAuth('admin'), async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('applications')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return res.status(500).json({ message: error.message });
+  }
+
+  res.json({ applications: data });
+});
