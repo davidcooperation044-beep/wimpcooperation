@@ -26,20 +26,6 @@ app.use(session({
   cookie: { maxAge: 1000 * 60 * 60 * 2 }
 }));
 
-const workerTasks = [
-  { id: 't1', title: 'Review order history', status: 'pending', due_date: '2026-08-10', project_ref: 'PX-102' },
-  { id: 't2', title: 'Update asset inventory', status: 'in_progress', due_date: '2026-08-14', project_ref: 'INV-57' }
-];
-
-const referrals = [
-  { code: 'WIMPY-A1', clicks: 312, conversions: 21, affiliateId: '3' }
-];
-
-const commissions = [
-  { id: 'c1', affiliateId: '3', amount: 420.0, status: 'pending', payout_date: '2026-08-21' },
-  { id: 'c2', affiliateId: '3', amount: 160.0, status: 'paid', payout_date: '2026-07-19' }
-];
-
 async function resolvePortalUserByAuthId(authId) {
   const { data, error } = await supabaseAdmin
     .from('portal_users')
@@ -118,23 +104,61 @@ app.get('/api/user', (req, res) => {
   res.json({ user: req.session.user });
 });
 
-app.get('/api/admin/stats', requireAuth('admin'), (req, res) => {
-  res.json({ pendingApplications: 14, activeWorkers: 28, activeAffiliates: 7 });
+app.get('/api/admin/stats', requireAuth('admin'), async (req, res) => {
+  const [{ count: activeWorkers }, { count: activeAffiliates }] = await Promise.all([
+    supabaseAdmin.from('portal_users').select('id', { count: 'exact', head: true }).eq('role', 'worker').eq('status', 'active'),
+    supabaseAdmin.from('portal_users').select('id', { count: 'exact', head: true }).eq('role', 'affiliate').eq('status', 'active')
+  ]);
+
+  // No applications table exists yet in supabase/migrations — add one and
+  // query it here once applications are tracked in the database.
+  res.json({
+    pendingApplications: 0,
+    activeWorkers: activeWorkers || 0,
+    activeAffiliates: activeAffiliates || 0
+  });
 });
 
-app.get('/api/worker/tasks', requireAuth('worker'), (req, res) => {
-  res.json({ tasks: workerTasks.filter((task) => task.assigned_to !== false) });
+app.get('/api/worker/tasks', requireAuth('worker'), async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('worker_tasks')
+    .select('id, title, status, due_date, project_ref')
+    .eq('assigned_to', req.session.user.id)
+    .order('due_date', { ascending: true });
+
+  if (error) {
+    console.warn('Unable to load worker tasks:', error.message);
+    return res.status(500).json({ message: 'Unable to load tasks.' });
+  }
+
+  res.json({ tasks: data || [] });
 });
 
-app.get('/api/affiliate/data', requireAuth('affiliate'), (req, res) => {
+app.get('/api/affiliate/data', requireAuth('affiliate'), async (req, res) => {
   const affiliateId = req.session.user.id;
-  const userReferrals = referrals.filter((row) => row.affiliateId === affiliateId);
-  const userCommissions = commissions.filter((row) => row.affiliateId === affiliateId);
-  res.json({ referrals: userReferrals, commissions: userCommissions });
+
+  const [{ data: userReferrals, error: referralsError }, { data: userCommissions, error: commissionsError }] = await Promise.all([
+    supabaseAdmin.from('affiliate_referrals').select('code, clicks, conversions').eq('affiliate_id', affiliateId),
+    supabaseAdmin.from('affiliate_commissions').select('id, amount, status, payout_date').eq('affiliate_id', affiliateId).order('payout_date', { ascending: false })
+  ]);
+
+  if (referralsError || commissionsError) {
+    console.warn('Unable to load affiliate data:', referralsError?.message || commissionsError?.message);
+    return res.status(500).json({ message: 'Unable to load affiliate data.' });
+  }
+
+  res.json({ referrals: userReferrals || [], commissions: userCommissions || [] });
 });
 
 app.get('/admin.html', requireAuth('admin'), (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+const adminSubPages = ['admin-applications.html', 'admin-staff.html', 'admin-tasks.html', 'admin-commissions.html'];
+adminSubPages.forEach((page) => {
+  app.get(`/${page}`, requireAuth('admin'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', page));
+  });
 });
 
 app.get('/worker.html', requireAuth('worker'), (req, res) => {
@@ -145,8 +169,10 @@ app.get('/affiliate.html', requireAuth('affiliate'), (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'affiliate.html'));
 });
 
-app.get('/logout.html', requireAuth(), (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'logout.html'));
+app.get('/logout.html', (req, res) => {
+  req.session.destroy(() => {
+    res.sendFile(path.join(__dirname, 'public', 'logout.html'));
+  });
 });
 
 app.get('/', (req, res) => {

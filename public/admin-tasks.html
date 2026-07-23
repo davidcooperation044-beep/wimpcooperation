@@ -12,31 +12,32 @@
         <div class="header-inner">
           <div class="header-title">
             <strong>Wimpy Portal</strong>
-            <span>Worker task list</span>
+            <span>Task assignment</span>
           </div>
           <div class="site-nav">
-            <a href="index.html">Home</a>
-            <a href="admin.html">Admin</a>
-            <a href="affiliate.html">Affiliate</a>
-            <a href="logout.html">Logout</a>
+            <a href="/admin.html">Admin</a>
+            <a href="/admin-applications.html">Applications</a>
+            <a href="/admin-staff.html">Staff</a>
+            <a href="/admin-commissions.html">Commissions</a>
+            <a href="/logout.html">Logout</a>
           </div>
         </div>
       </header>
       <main class="main-content">
         <section class="section-title">
           <div>
-            <h2>My tasks</h2>
-            <p>Assigned work only. Updates are handled through the task rows.</p>
+            <h2>Worker tasks</h2>
+            <p>Assign and update work for your team.</p>
           </div>
         </section>
         <div class="table-shell">
           <table>
             <thead>
               <tr>
-                <th>Title</th>
+                <th>Task</th>
                 <th>Status</th>
                 <th>Due date</th>
-                <th>Project</th>
+                <th>Assigned to</th>
               </tr>
             </thead>
             <tbody>
@@ -44,13 +45,12 @@
                 <td>Example task</td>
                 <td>pending</td>
                 <td>—</td>
-                <td>—</td>
+                <td>John Smith</td>
               </tr>
             </tbody>
           </table>
         </div>
       </main>
     </div>
-    <script src="app.js"></script>
   </body>
 </html>
