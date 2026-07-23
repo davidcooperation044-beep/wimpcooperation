@@ -48,6 +48,23 @@ app.use(session({
         maxAge: 1000 * 60 * 60 * 2
     }
 }));
+
+function generatePassword(length = 12) {
+
+    const chars =
+        'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+
+    let password = '';
+
+    for (let i = 0; i < length; i++) {
+        password += chars.charAt(
+            Math.floor(Math.random() * chars.length)
+        );
+    }
+
+    return password;
+
+}
 async function resolvePortalUser(authId) {
 
     const { data, error } = await supabaseAdmin
