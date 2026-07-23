@@ -606,8 +606,117 @@ app.get('/api/worker/tasks', requireAuth('worker'), async (req, res) => {
 });
 
 // ================================
-// Affiliate Routes
+// Admin Task Routes
 // ================================
+
+app.get('/api/admin/tasks', requireAuth('admin'), async (req, res) => {
+
+    const { data, error } = await supabaseAdmin
+        .from('worker_tasks')
+        .select('*')
+        .order('due_date', {
+            ascending: true
+        });
+
+    if (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+    res.json({
+        tasks: data || []
+    });
+
+});
+
+app.patch('/api/admin/tasks/:id/complete', requireAuth('admin'), async (req, res) => {
+
+    const { id } = req.params;
+
+    const { error } = await supabaseAdmin
+        .from('worker_tasks')
+        .update({
+            status: 'complete'
+        })
+        .eq('id', id);
+
+    if (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+    res.json({
+        message: 'Task marked complete.'
+    });
+
+});
+
+// ================================
+// Admin Commission Routes
+// ================================
+
+app.get('/api/admin/commissions', requireAuth('admin'), async (req, res) => {
+
+    const { data, error } = await supabaseAdmin
+        .from('affiliate_commissions')
+        .select('*')
+        .order('created_at', {
+            ascending: false
+        });
+
+    if (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+    res.json({
+        commissions: data || []
+    });
+
+});
+
+app.patch('/api/admin/commissions/:id/paid', requireAuth('admin'), async (req, res) => {
+
+    const { id } = req.params;
+
+    const { error } = await supabaseAdmin
+        .from('affiliate_commissions')
+        .update({
+            status: 'paid',
+            payout_date: new Date().toISOString().slice(0, 10)
+        })
+        .eq('id', id);
+
+    if (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+    res.json({
+        message: 'Commission marked as paid.'
+    });
+
+});
 
 app.get('/api/affiliate/data', requireAuth('affiliate'), async (req, res) => {
 
