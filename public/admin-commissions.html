@@ -45,6 +45,24 @@
             <thead>
               <tr>
                 <th>Affiliate</th>
+                <th>Referral code</th>
+                <th>Clicks</th>
+                <th>Conversions</th>
+                <th>Suggested (clicks &times; $0.50)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="referrals-body">
+              <tr><td colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-shell" style="margin-top: 1rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>Affiliate</th>
                 <th>Amount</th>
                 <th>Status</th>
               </tr>
@@ -57,6 +75,21 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Add commission modal -->
+        <div id="commission-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:100;">
+          <div style="background:#fff; padding:1.5rem; border-radius:8px; max-width:400px; width:100%;">
+            <h3>Add commission</h3>
+            <p style="margin:0.5rem 0;">Affiliate: <strong id="commission-affiliate-label"></strong></p>
+            <input type="hidden" id="commission-affiliate-id">
+            <label style="display:block; margin:0.75rem 0 0.25rem;">Amount ($)</label>
+            <input type="number" id="commission-amount-input" step="0.01" min="0" style="width:100%; padding:0.5rem;">
+            <div style="display:flex; gap:0.5rem; margin-top:1rem; justify-content:flex-end;">
+              <button onclick="closeCommissionModal()">Cancel</button>
+              <button onclick="submitCommission()">Add</button>
+            </div>
+          </div>
         </div>
       </main>
     </div>
