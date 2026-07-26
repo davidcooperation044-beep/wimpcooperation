@@ -9,6 +9,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { sendWelcomeEmail, sendRejectionEmail } = require('./utils/email');
 
 const app = express();
+app.set('trust proxy', true);
 
 const PORT = process.env.PORT || 3000;
 
@@ -978,6 +979,39 @@ app.use(
         path.join(__dirname, 'public')
     )
 );
+
+
+app.get('/r/:code', async (req, res) => {
+
+    const { code } = req.params;
+
+    let deviceId = req.cookies?.device_id;
+
+    if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        res.cookie('device_id', deviceId, {
+            maxAge: 1000 * 60 * 60 * 24 * 365,
+            httpOnly: true,
+            sameSite: 'lax'
+        });
+    }
+
+    // req.ip requires 'trust proxy' to be set if you're behind a reverse proxy / load balancer (see note below)
+    const ipAddress = req.ip;
+
+    const { error } = await supabaseAdmin.rpc('increment_referral_click', {
+        p_code: code,
+        p_device_id: deviceId,
+        p_ip_address: ipAddress
+    });
+
+    if (error) {
+        console.error('Failed to record click for code', code, error);
+    }
+
+    res.redirect(302, `https://www.wimpy-corp.com.ng/?ref=${encodeURIComponent(code)}`);
+
+});
 
 // ================================
 // Start Server
