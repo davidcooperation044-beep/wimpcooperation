@@ -412,7 +412,7 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
 
         if (
             application.role_interest &&
-            application.role_interest.toLowerCase() === 'affiliate'
+            application.role_interest.toLowerCase().includes('affiliate')
         ) {
             portalRole = 'affiliate';
         }
