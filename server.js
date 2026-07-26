@@ -79,6 +79,21 @@ function generatePassword(length = 12) {
 
 }
 
+function generateReferralCode(seed = '') {
+
+    const slug = seed
+        .toString()
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .slice(0, 6) || 'WIMPY';
+
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+
+    return `${slug}-${suffix}`;
+
+}
+
 async function resolvePortalUser(authId) {
 
     const { data, error } = await supabaseAdmin
@@ -471,6 +486,41 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
 
         }
 
+        // Auto-generate a referral code for affiliates so they have
+        // a working link the moment their account is created —
+        // previously nothing created this row at all.
+        if (portalRole === 'affiliate') {
+
+            let referralCode = generateReferralCode(application.name || application.email);
+
+            let { error: referralError } =
+                await supabaseAdmin
+                    .from('affiliate_referrals')
+                    .insert({
+                        affiliate_id: authData.user.id,
+                        code: referralCode
+                    });
+
+            // Extremely unlikely code collision — try once more with a fresh code
+            if (referralError && referralError.code === '23505') {
+                referralCode = generateReferralCode(application.name || application.email);
+                ({ error: referralError } =
+                    await supabaseAdmin
+                        .from('affiliate_referrals')
+                        .insert({
+                            affiliate_id: authData.user.id,
+                            code: referralCode
+                        }));
+            }
+
+            if (referralError) {
+                // Don't fail the whole hire over this — log it so an
+                // admin can create the referral row manually if needed.
+                console.error('Failed to create referral code for new affiliate:', referralError);
+            }
+
+        }
+
         // Remove the application record now that the applicant has
         // been hired — the portal_users row is the new source of truth.
         await supabaseAdmin
@@ -686,6 +736,79 @@ app.get('/api/admin/commissions', requireAuth('admin'), async (req, res) => {
 
     res.json({
         commissions: data || []
+    });
+
+});
+
+// All referral codes + click/conversion counts, joined with the
+// affiliate's email, so admin can see tap counts before manually
+// deciding what to pay out ($0.50/tap is tracked here as reference —
+// actual payout amount is still entered by hand per the business rule).
+app.get('/api/admin/referrals', requireAuth('admin'), async (req, res) => {
+
+    const { data: referrals, error } = await supabaseAdmin
+        .from('affiliate_referrals')
+        .select('*, portal_users(email)')
+        .order('clicks', { ascending: false });
+
+    if (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+    res.json({
+        referrals: (referrals || []).map(r => ({
+            id: r.id,
+            affiliate_id: r.affiliate_id,
+            email: r.portal_users ? r.portal_users.email : 'Unknown',
+            code: r.code,
+            clicks: r.clicks,
+            conversions: r.conversions,
+            suggested_amount: (r.clicks * 0.5).toFixed(2)
+        }))
+    });
+
+});
+
+// Manually create a commission for an affiliate — the admin decides
+// the amount (e.g. based on the suggested clicks * $0.50 figure above)
+app.post('/api/admin/commissions', requireAuth('admin'), async (req, res) => {
+
+    const { affiliate_id, amount } = req.body || {};
+
+    if (!affiliate_id || !amount || isNaN(Number(amount))) {
+
+        return res.status(400).json({
+            message: 'affiliate_id and a numeric amount are required.'
+        });
+
+    }
+
+    const { error } = await supabaseAdmin
+        .from('affiliate_commissions')
+        .insert({
+            affiliate_id,
+            amount: Number(amount),
+            status: 'pending'
+        });
+
+    if (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+    res.json({
+        message: 'Commission added.'
     });
 
 });
