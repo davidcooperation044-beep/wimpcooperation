@@ -563,6 +563,82 @@ async function loadCommissions() {
 
 }
 
+async function loadReferrals() {
+
+    const body = document.getElementById('referrals-body');
+
+    if (!body) return;
+
+    try {
+
+        const { referrals } = await api('/api/admin/referrals');
+
+        body.innerHTML = '';
+
+        if (referrals.length === 0) {
+            body.innerHTML = `<tr><td colspan="6">No referral codes yet.</td></tr>`;
+            return;
+        }
+
+        referrals.forEach(ref => {
+            body.innerHTML += `
+                <tr>
+                    <td>${ref.email}</td>
+                    <td>${ref.code}</td>
+                    <td>${ref.clicks}</td>
+                    <td>${ref.conversions}</td>
+                    <td>$${ref.suggested_amount}</td>
+                    <td>
+                        <button onclick="openCommissionModal('${ref.affiliate_id}', '${ref.email}', '${ref.suggested_amount}')">
+                            Add commission
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+    } catch (err) {
+        console.error(err);
+        body.innerHTML = `<tr><td colspan="6">Failed to load referrals.</td></tr>`;
+    }
+
+}
+
+function openCommissionModal(affiliateId, email, suggestedAmount) {
+    document.getElementById('commission-affiliate-id').value = affiliateId;
+    document.getElementById('commission-affiliate-label').textContent = email;
+    document.getElementById('commission-amount-input').value = suggestedAmount;
+    document.getElementById('commission-modal').style.display = 'flex';
+}
+
+function closeCommissionModal() {
+    document.getElementById('commission-modal').style.display = 'none';
+}
+
+async function submitCommission() {
+    const affiliate_id = document.getElementById('commission-affiliate-id').value;
+    const amount = document.getElementById('commission-amount-input').value;
+
+    if (!affiliate_id || !amount) return;
+
+    try {
+        await api('/api/admin/commissions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ affiliate_id, amount })
+        });
+        closeCommissionModal();
+        await loadCommissions();
+        await loadReferrals();
+        alert('Commission added.');
+    } catch (err) {
+        console.error(err);
+        alert('Failed to add commission.');
+    }
+}
+
 async function initializePage() {
 
     const page = document.body.dataset.page;
@@ -636,6 +712,7 @@ async function initializePage() {
 
     case 'admin-commissions':
     await loadCommissions();
+    await loadReferrals();
     break;
 
     case 'worker':
