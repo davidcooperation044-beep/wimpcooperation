@@ -883,6 +883,36 @@ app.get('/api/affiliate/data', requireAuth('affiliate'), async (req, res) => {
 
 });
 
+const crypto = require('crypto'); // already imported at the top of your file
+
+app.get('/r/:code', async (req, res) => {
+
+    const { code } = req.params;
+
+    // Reuse existing device cookie, or issue a new one
+    let deviceId = req.cookies?.device_id;
+
+    if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        res.cookie('device_id', deviceId, {
+            maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year
+            httpOnly: true,
+            sameSite: 'lax'
+        });
+    }
+
+    const { error } = await supabaseAdmin.rpc('increment_referral_click', {
+        p_code: code,
+        p_device_id: deviceId
+    });
+
+    if (error) {
+        console.error('Failed to record click for code', code, error);
+    }
+
+    res.redirect(302, `https://www.wimpy-corp.com.ng/?ref=${encodeURIComponent(code)}`);
+
+});
 // ================================
 // Protected Pages
 // ================================
