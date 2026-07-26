@@ -4,6 +4,39 @@ const loginButton = document.querySelector('#login-button');
 const userBadge = document.querySelector('#user-badge');
 const logoutButton = document.querySelector('#logout-button');
 
+// The public corporate site — referral links point here with ?ref=CODE
+const CORPORATE_SITE_URL = 'https://www.wimpy-corp.com.ng';
+
+function referralLink(code) {
+    return `${CORPORATE_SITE_URL}/?ref=${code}`;
+}
+
+function copyReferralLink() {
+    const el = document.getElementById('referral-code');
+    const link = el && el.dataset.link;
+    if (!link) return;
+
+    navigator.clipboard.writeText(link).then(() => {
+        const btn = document.getElementById('copy-referral-link');
+        if (!btn) return;
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+    }).catch(() => {
+        alert('Could not copy automatically — select and copy the link manually.');
+    });
+}
+
+function copyPlainLink(link, btn) {
+    navigator.clipboard.writeText(link).then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+    }).catch(() => {
+        alert('Could not copy automatically — select and copy the link manually.');
+    });
+}
+
 async function api(url, options = {}) {
     const response = await fetch(url, options);
 
@@ -384,10 +417,17 @@ async function loadAffiliateDashboard() {
         pendingTotal.textContent = `$${pending.toFixed(2)}`;
         paidTotal.textContent = `$${paid.toFixed(2)}`;
 
-        referralCode.textContent =
-            referrals.length
-                ? referrals[0].code
-                : 'No referral code';
+        const copyBtn = document.getElementById('copy-referral-link');
+
+        if (referrals.length) {
+            const link = referralLink(referrals[0].code);
+            referralCode.textContent = link;
+            referralCode.dataset.link = link;
+            if (copyBtn) copyBtn.style.display = 'inline-block';
+        } else {
+            referralCode.textContent = 'No referral link assigned yet';
+            if (copyBtn) copyBtn.style.display = 'none';
+        }
 
         referralsBody.innerHTML = '';
 
@@ -395,7 +435,7 @@ async function loadAffiliateDashboard() {
 
             referralsBody.innerHTML += `
                 <tr>
-                    <td>${ref.code}</td>
+                    <td style="word-break: break-all;">${referralLink(ref.code)}</td>
                     <td>${ref.clicks}</td>
                     <td>${ref.conversions}</td>
                 </tr>
@@ -584,7 +624,10 @@ async function loadReferrals() {
             body.innerHTML += `
                 <tr>
                     <td>${ref.email}</td>
-                    <td>${ref.code}</td>
+                    <td style="word-break: break-all;">
+                        ${referralLink(ref.code)}
+                        <button onclick="copyPlainLink('${referralLink(ref.code)}', this)" style="margin-left:0.4rem;">Copy</button>
+                    </td>
                     <td>${ref.clicks}</td>
                     <td>${ref.conversions}</td>
                     <td>$${ref.suggested_amount}</td>
