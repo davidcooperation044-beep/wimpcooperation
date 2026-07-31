@@ -4,6 +4,13 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendWelcomeEmail(email, password, role) {
 
+    const roleLabels = {
+        admin: 'Admin',
+        worker: 'Worker',
+        affiliate: 'Affiliate / Partner',
+        account_manager: 'Account Manager'
+    };
+
     const { data, error } = await resend.emails.send({
 
         from: process.env.FROM_EMAIL,
@@ -17,7 +24,7 @@ async function sendWelcomeEmail(email, password, role) {
 
             <p>Your application has been accepted.</p>
 
-            <p><strong>Role:</strong> ${role}</p>
+            <p><strong>Role:</strong> ${roleLabels[role] || role}</p>
 
             <p><strong>Email:</strong> ${email}</p>
 
