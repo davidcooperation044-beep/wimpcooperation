@@ -92,6 +92,9 @@ async function handleLoginSubmit(event) {
             case 'affiliate':
                 location.href = '/affiliate.html';
                 break;
+            case 'account_manager':
+                location.href = '/account-manager.html';
+                break;
             default:
                 location.href = '/';
         }
@@ -206,6 +209,11 @@ async function loadStaff() {
                                 Affiliate
                             </option>
 
+                            <option value="account_manager"
+                                ${user.role === 'account_manager' ? 'selected' : ''}>
+                                Account Manager
+                            </option>
+
                         </select>
 
                     </td>
@@ -251,6 +259,34 @@ async function loadStaff() {
     }
 
 }
+// The full application list, keyed by id, so the Details button can
+// show the extra vetting fields without re-fetching or embedding
+// raw (possibly quote-containing) text into onclick attributes.
+const applicationsCache = {};
+
+function showApplicationDetails(id) {
+    const app = applicationsCache[id];
+    if (!app) return;
+
+    const lines = [
+        `Role: ${app.role_interest || '-'}`,
+        `Years of experience: ${app.years_experience || '-'}`,
+        `Availability: ${app.availability || '-'}`,
+        `Expected pay: ${app.expected_pay || '-'}`,
+        `Earliest start date: ${app.start_date || '-'}`,
+        `LinkedIn: ${app.linkedin_url || '-'}`,
+        `Heard about us via: ${app.heard_about_us || '-'}`,
+        '',
+        `Why they want to work with us:`,
+        app.motivation || '-',
+        '',
+        `Pitch:`,
+        app.pitch || '-'
+    ];
+
+    alert(lines.join('\n'));
+}
+
 async function loadApplications() {
 
     const body = document.getElementById('applications-body');
@@ -275,6 +311,8 @@ async function loadApplications() {
         }
 
         applications.forEach(app => {
+
+            applicationsCache[app.id] = app;
 
             body.innerHTML += `
                 <tr>
@@ -304,6 +342,10 @@ async function loadApplications() {
                     </td>
 
                     <td>
+
+                        <button onclick="showApplicationDetails('${app.id}')">
+                            Details
+                        </button>
 
                         <button onclick="acceptApplication('${app.id}')">
                             Accept
@@ -391,6 +433,82 @@ async function loadWorkerTasks() {
     }
 
 }
+
+async function loadInquiries() {
+
+    const body = document.getElementById('inquiries-body');
+
+    if (!body) return;
+
+    try {
+
+        const { inquiries } = await api('/api/account-manager/inquiries');
+
+        body.innerHTML = '';
+
+        if (inquiries.length === 0) {
+            body.innerHTML = `<tr><td colspan="8">No project inquiries yet.</td></tr>`;
+            return;
+        }
+
+        inquiries.forEach(inq => {
+            body.innerHTML += `
+                <tr>
+                    <td>${inq.name}</td>
+                    <td>${inq.email}</td>
+                    <td>${inq.project_type || '-'}</td>
+                    <td>${inq.budget || inq.custom_budget || '-'}</td>
+                    <td style="max-width:220px; white-space:normal;">${inq.message || '-'}</td>
+                    <td>
+                        <select onchange="updateInquiryStatus('${inq.id}', this.value)">
+                            <option value="new" ${inq.status === 'new' ? 'selected' : ''}>New</option>
+                            <option value="reviewed" ${inq.status === 'reviewed' ? 'selected' : ''}>Reviewed</option>
+                            <option value="in_progress" ${inq.status === 'in_progress' ? 'selected' : ''}>In progress</option>
+                            <option value="closed" ${inq.status === 'closed' ? 'selected' : ''}>Closed</option>
+                        </select>
+                    </td>
+                    <td>
+                        <textarea rows="2" style="width:160px;" onblur="updateInquiryNotes('${inq.id}', this.value)">${inq.notes || ''}</textarea>
+                    </td>
+                    <td>${new Date(inq.created_at).toLocaleDateString()}</td>
+                </tr>
+            `;
+        });
+
+    } catch (err) {
+        console.error(err);
+        body.innerHTML = `<tr><td colspan="8">Failed to load inquiries.</td></tr>`;
+    }
+
+}
+
+async function updateInquiryStatus(id, status) {
+    try {
+        await api(`/api/account-manager/inquiries/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+    } catch (err) {
+        console.error(err);
+        alert('Failed to update status.');
+        loadInquiries();
+    }
+}
+
+async function updateInquiryNotes(id, notes) {
+    try {
+        await api(`/api/account-manager/inquiries/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes })
+        });
+    } catch (err) {
+        console.error(err);
+        alert('Failed to save notes.');
+    }
+}
+
 async function loadAffiliateDashboard() {
 
     const referralsBody = document.getElementById('referrals-body');
@@ -701,6 +819,9 @@ async function initializePage() {
                 case 'affiliate':
                     location.href = '/affiliate.html';
                     break;
+                case 'account_manager':
+                    location.href = '/account-manager.html';
+                    break;
             }
         }
 
@@ -764,6 +885,10 @@ async function initializePage() {
 
    case 'affiliate':
     await loadAffiliateDashboard();
+    break;
+
+   case 'account-manager':
+    await loadInquiries();
     break;
 
 }
