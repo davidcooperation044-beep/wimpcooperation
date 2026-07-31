@@ -9,7 +9,6 @@ const { createClient } = require('@supabase/supabase-js');
 const { sendWelcomeEmail, sendRejectionEmail } = require('./utils/email');
 
 const app = express();
-app.set('trust proxy', true);
 
 const PORT = process.env.PORT || 3000;
 
@@ -131,14 +130,17 @@ function requireAuth(role = null) {
 
         }
 
-        if (
-            role &&
-            req.session.user.role !== role
-        ) {
+        if (role) {
 
-            return res.status(403).json({
-                message: 'Forbidden.'
-            });
+            const allowedRoles = Array.isArray(role) ? role : [role];
+
+            if (!allowedRoles.includes(req.session.user.role)) {
+
+                return res.status(403).json({
+                    message: 'Forbidden.'
+                });
+
+            }
 
         }
 
@@ -147,6 +149,74 @@ function requireAuth(role = null) {
     };
 
 }
+
+// ================================
+// Account Manager Routes
+// ================================
+
+// Project inquiries only — job applications aren't an account
+// manager's concern, that stays with admin's hiring review.
+app.get('/api/account-manager/inquiries', requireAuth('account_manager'), async (req, res) => {
+
+    const { data, error } = await supabaseAdmin
+        .from('applications')
+        .select('*')
+        .eq('type', 'project_inquiry')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+    res.json({
+        inquiries: data || []
+    });
+
+});
+
+app.patch('/api/account-manager/inquiries/:id', requireAuth('account_manager'), async (req, res) => {
+
+    const updates = {};
+
+    if (req.body.status) updates.status = req.body.status;
+    if (typeof req.body.notes === 'string') updates.notes = req.body.notes;
+
+    if (Object.keys(updates).length === 0) {
+        return res.status(400).json({
+            message: 'Nothing to update.'
+        });
+    }
+
+    const { data, error } = await supabaseAdmin
+        .from('applications')
+        .update(updates)
+        .eq('id', req.params.id)
+        .eq('type', 'project_inquiry')
+        .select()
+        .single();
+
+    if (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+    res.json({
+        inquiry: data
+    });
+
+});
+
 // ================================
 // Authentication Routes
 // ================================
@@ -431,6 +501,11 @@ app.patch('/api/admin/applications/:id/accept', requireAuth('admin'), async (req
             application.role_interest.toLowerCase().includes('affiliate')
         ) {
             portalRole = 'affiliate';
+        } else if (
+            application.role_interest &&
+            application.role_interest.toLowerCase().includes('account manager')
+        ) {
+            portalRole = 'account_manager';
         }
 
         // Generate temporary password
@@ -884,36 +959,6 @@ app.get('/api/affiliate/data', requireAuth('affiliate'), async (req, res) => {
 
 });
 
-const crypto = require('crypto'); // already imported at the top of your file
-
-app.get('/r/:code', async (req, res) => {
-
-    const { code } = req.params;
-
-    // Reuse existing device cookie, or issue a new one
-    let deviceId = req.cookies?.device_id;
-
-    if (!deviceId) {
-        deviceId = crypto.randomUUID();
-        res.cookie('device_id', deviceId, {
-            maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year
-            httpOnly: true,
-            sameSite: 'lax'
-        });
-    }
-
-    const { error } = await supabaseAdmin.rpc('increment_referral_click', {
-        p_code: code,
-        p_device_id: deviceId
-    });
-
-    if (error) {
-        console.error('Failed to record click for code', code, error);
-    }
-
-    res.redirect(302, `https://www.wimpy-corp.com.ng/?ref=${encodeURIComponent(code)}`);
-
-});
 // ================================
 // Protected Pages
 // ================================
@@ -944,6 +989,10 @@ app.get('/worker.html', requireAuth('worker'), (req, res) => {
 
 app.get('/affiliate.html', requireAuth('affiliate'), (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'affiliate.html'));
+});
+
+app.get('/account-manager.html', requireAuth('account_manager'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'account-manager.html'));
 });
 
 // ================================
@@ -979,39 +1028,6 @@ app.use(
         path.join(__dirname, 'public')
     )
 );
-
-
-app.get('/r/:code', async (req, res) => {
-
-    const { code } = req.params;
-
-    let deviceId = req.cookies?.device_id;
-
-    if (!deviceId) {
-        deviceId = crypto.randomUUID();
-        res.cookie('device_id', deviceId, {
-            maxAge: 1000 * 60 * 60 * 24 * 365,
-            httpOnly: true,
-            sameSite: 'lax'
-        });
-    }
-
-    // req.ip requires 'trust proxy' to be set if you're behind a reverse proxy / load balancer (see note below)
-    const ipAddress = req.ip;
-
-    const { error } = await supabaseAdmin.rpc('increment_referral_click', {
-        p_code: code,
-        p_device_id: deviceId,
-        p_ip_address: ipAddress
-    });
-
-    if (error) {
-        console.error('Failed to record click for code', code, error);
-    }
-
-    res.redirect(302, `https://www.wimpy-corp.com.ng/?ref=${encodeURIComponent(code)}`);
-
-});
 
 // ================================
 // Start Server
